@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>易租</title>
+    <link rel="shortcut icon" href="image/icon/only_icon.png">
+    <!-- 引入axios -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- 引入vue -->
+    <script src="js/vue.js"></script>
+    <!-- 引入el组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <el-header>
+            <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
+                <el-menu-item index="1"><img src="image/icon/icon_noback.jpg" style="width: 60px; height: 60px"/></el-menu-item>
+                <el-menu-item index="2"><a href="pages/rate.html" style="text-decoration: none">评价</a></el-menu-item>
+                <el-menu-item index="3" v-show="!isLog"><a href="pages/login.html" style="text-decoration: none">登录</a></el-menu-item>
+                <el-submenu index="3-2" v-show="isLog">
+                    <template slot="title">{{userInfo.username}}</template>
+                    <el-menu-item index="3-2-1" @click="ToUserInfo">个人中心</el-menu-item>
+                    <el-menu-item index="3-2-2" @click="logout">注销</el-menu-item>
+                </el-submenu>
+            </el-menu>
+        </el-header>
+        <el-main>
+            <template>
+                <el-radio-group v-model="type">
+                    <el-radio v-model="type" label="手机">手机</el-radio>
+                    <el-radio v-model="type" label="耳机">耳机</el-radio>
+                    <el-radio v-model="type" label="主机">主机</el-radio>
+                    <el-radio v-model="type" label="笔记本">笔记本</el-radio>
+                    <el-radio v-model="type" label="">全部</el-radio>
+                    <el-button type="primary" round size="small" @click="handleSelectByType">查询</el-button>
+                </el-radio-group>
+            </template>
+            <br>
+            <br>
+            <template>
+                <el-radio-group v-model="brand">
+                    <el-radio v-model="brand" label="苹果">苹果</el-radio>
+                    <el-radio v-model="brand" label="华为">华为</el-radio>
+                    <el-radio v-model="brand" label="小米">小米</el-radio>
+                    <el-radio v-model="brand" label="索尼">索尼</el-radio>
+                    <el-radio v-model="brand" label="华硕">华硕</el-radio>
+                    <el-radio v-model="brand" label="微星">微星</el-radio>
+                    <el-radio v-model="brand" label="三星">三星</el-radio>
+                    <el-radio v-model="brand" label="任天堂">任天堂</el-radio>
+                    <el-radio v-model="brand" label="">全部</el-radio>
+                    <el-button type="primary" round size="small" @click="handleSelectByBrand">查询</el-button>
+                </el-radio-group>
+            </template>
+            <template>
+                <el-table
+                        :data="tableData"
+                        style="width: 100%">
+                    <el-table-column
+                            label="名称"
+                            prop="name">
+                    </el-table-column>
+                    <el-table-column
+                            label="品牌"
+                            prop="brand">
+                    </el-table-column>
+                    <el-table-column
+                            label="类型"
+                            prop="type">
+                    </el-table-column>
+                    <el-table-column
+                            label="价格/天"
+                            prop="value">
+                        <template slot-scope="scope">
+                            {{scope.row.value}}元/天
+                        </template>
+                    </el-table-column>
+                    <el-table-column
+                            label="库存"
+                            prop="stock">
+                        <template slot-scope="scope">
+                            {{scope.row.stock}}件
+                        </template>
+                    </el-table-column>
+                    <el-table-column
+                            align="right">
+                        <template slot="header" slot-scope="scope">
+                            <el-input v-model="name" placeholder="请输入内容" @keyup.enter.native="handleSelectByName"></el-input>
+                        </template>
+                        <template slot-scope="scope">
+                            <el-button
+                                    size="mini"
+                                    type="primary"
+                                    @click="handleSelectById(scope.row)">租借
+                            </el-button>
+                            <el-button
+                                    size="mini"
+                                    type="info"
+                                    @click="handleDetailOpen(scope.row)">详情
+                            </el-button>
+                            <el-button
+                                    size="mini"
+                                    type="danger"
+                                    v-show="showEditButton"
+                                    @click="handleShowEdit(scope.row)">编辑
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </template>
+            <el-pagination
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    :current-page="currentPage"
+                    :page-sizes="[6, 12, 18, 24]"
+                    :page-size="pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="totalCount">
+            </el-pagination>
+            <el-dialog title="租借" :visible.sync="formVisible4Rent" width="40%">
+                <el-form :label-position="labelPosition" label-width="auto" :model="formDate">
+                    <el-form-item label="名称">
+                        <el-input v-model="formDate.name" :disabled="true"></el-input>
+                    </el-form-item>
+                    <el-row>
+                        <el-col :span="12">
+                            <el-form-item label="品牌">
+                                <el-input v-model="formDate.brand" :disabled="true"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="类型">
+                                <el-input v-model="formDate.type" :disabled="true"></el-input>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <el-row>
+                        <el-col :span="12">
+                            <el-form-item label="价格/天">
+                                <el-input v-model="formDate.value" :disabled="true"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="库存">
+                                <el-input v-model="formDate.stock" :disabled="true"></el-input>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <el-form-item label="描述">
+                        <el-input v-model="formDate.description" :disabled="true" type="textarea" :rows="4"></el-input>
+                    </el-form-item>
+                    <el-row>
+                        <el-col :span="6">
+                            <el-form-item label="租借数目">
+                                <el-input v-model.number="num"></el-input>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <template>
+                        <div class="block">
+                            <span class="demonstration">租借天数</span>
+                            <el-slider
+                                    v-model="days"
+                                    :min="1"
+                                    :max="30"
+                                    show-input>
+                            </el-slider>
+                        </div>
+                    </template>
+                </el-form>
+                <div slot="footer">
+                    <el-button @click="handleRentCancel">取消</el-button>
+                    <el-button type="primary" @click="handleRent">确定</el-button>
+                </div>
+            </el-dialog>
+            <el-dialog title="详情" :visible.sync="formVisible4Detail" width="40%">
+                <el-form :label-position="labelPosition" label-width="auto" :model="formDate">
+                    <el-form-item label="名称">
+                        <el-input v-model="formDate.name" :disabled="true"></el-input>
+                    </el-form-item>
+                    <el-row>
+                        <el-col :span="12">
+                            <el-form-item label="品牌">
+                                <el-input v-model="formDate.brand" :disabled="true"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="类型">
+                                <el-input v-model="formDate.type" :disabled="true"></el-input>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <el-row>
+                        <el-col :span="12">
+                            <el-form-item label="价格/天">
+                                <el-input v-model="formDate.value" :disabled="true"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="库存">
+                                <el-input v-model="formDate.stock" :disabled="true"></el-input>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <el-form-item label="描述">
+                        <el-input v-model="formDate.description" type="textarea" :disabled="true" :rows="4"></el-input>
+                    </el-form-item>
+                </el-form>
+                <div slot="footer">
+                    <el-button type="primary" @click="handleDetailClose">确定</el-button>
+                </div>
+            </el-dialog>
+            <el-dialog title="编辑" :visible.sync="formVisible4Edit" width="40%">
+                <el-form :label-position="labelPosition" label-width="auto" :model="formDate">
+                    <el-form-item label="名称">
+                        <el-input v-model="formDate.name" ></el-input>
+                    </el-form-item>
+                    <el-row>
+                        <el-col :span="12">
+                            <el-form-item label="品牌">
+                                <el-input v-model="formDate.brand"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="类型">
+                                <el-input v-model="formDate.type"></el-input>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <el-row>
+                        <el-col :span="12">
+                            <el-form-item label="价格/天">
+                                <el-input v-model="formDate.value"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="库存">
+                                <el-input v-model="formDate.stock"></el-input>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <el-form-item label="描述">
+                        <el-input v-model="formDate.description" type="textarea" :rows="4"></el-input>
+                    </el-form-item>
+                </el-form>
+                <div slot="footer">
+                    <el-button @click="handleEditCancel">取消</el-button>
+                    <el-popconfirm
+                            title="确定要编辑此内容吗？"
+                            @confirm="handleEdit"
+                            @cancel="handleEditButtonCancel"
+                            >
+                        <el-button slot="reference" type="primary">编辑</el-button>
+                    </el-popconfirm>
+                </div>
+            </el-dialog>
+        </el-main>
+    </el-container>
+</div>
+</body>
+<script>
+    const app = new Vue({
+        el: "#app",
+        created() {
+            this.selectByPage();
+            const userInfo = window.localStorage.getItem('userInfo');
+            if(userInfo){
+                this.userInfo = JSON.parse(userInfo);
+                this.isLog = true;
+                this.refreshSession(this.userInfo);
+                if(this.userInfo.permission === 0){
+                    this.showEditButton = true;
+                }
+            }
+        },
+        data: {
+            labelPosition: 'right',
+            activeIndex: '1',
+            tableData: [],
+            name: '',
+            currentPage: 1,
+            totalCount: 0,
+            pageSize: 12,
+            formDate: {},
+            userInfo: {
+                id: '',
+                username: '点击登录',
+                permission: 1,
+            },
+            formVisible4Rent: false,
+            formVisible4Detail: false,
+            num: 1,
+            brand: "",
+            type: "",
+            days: 1,
+            isLog: false,
+            formVisible4Edit: false,
+            showEditButton: false,
+        },
+        methods: {
+            refreshSession(userInfo){
+                param = `?id=${userInfo.id}`;
+                axios.get("/users/session" + param).then(() =>{})
+            },
+            logout() {
+                _this = this;
+                axios.get("/users/logout").then((res) => {
+                    if(res.data.code === 50010){
+                        localStorage.removeItem('userInfo');
+                        this.$message.success("注销成功!");
+                        setTimeout(function(){window.location.href = 'index.html';},1000);
+                    }   
+                })
+            },
+            flushMoney() {
+                _this = this;
+                axios.get("/users/flush/" + _this.userInfo.id).then((res) => {
+                    window.localStorage.setItem("userInfo",JSON.stringify(res.data.data));
+                })
+            },
+            ToUserInfo(){
+                setTimeout(function(){window.location.href = 'pages/userInfo.html';},100);
+            },
+            handleSelect(key, keyPath) {
+            },
+            handleRentCancel() {
+                this.formVisible4Rent = false;
+                this.$message.info("取消");
+            },
+            handleEditButtonCancel(){
+                this.$message.info("取消编辑!");
+            },
+            handleEditCancel(){
+                this.formVisible4Edit = false;
+            },
+            handleSelectByBrand() {
+                _this = this;
+                _this.type = "";
+                _this.name = "";
+                if (_this.brand === "") {
+                    this.selectByPage();
+                } else {
+                    axios.get("/objects/" + _this.currentPage + "/" + _this.pageSize + "/brand/" + _this.brand).then((res) => {
+                        _this.tableData = res.data.data.records;
+                        _this.currentPage = res.data.data.current;
+                        _this.totalCount = res.data.data.total;
+                        _this.pageSize = res.data.data.size;
+                    })
+                }
+            },
+            handleEdit(){
+                _this = this;
+                axios.put("/objects", this.formDate).then((res) => {
+                    if(res.data.code === 20031){
+                        this.$message.success("修改成功!");
+                        _this.formVisible4Edit = false;
+                    }
+                }).finally(() => {
+                    this.selectByPage();
+                });
+            },
+            handleSelectByType() {
+                _this = this;
+                _this.brand = "";
+                _this.name = "";
+                if (_this.type === "") {
+                    this.selectByPage();
+                } else {
+                    axios.get("/objects/" + _this.currentPage + "/" + _this.pageSize + "/type/" + _this.type).then((res) => {
+                        _this.tableData = res.data.data.records;
+                        _this.currentPage = res.data.data.current;
+                        _this.totalCount = res.data.data.total;
+                        _this.pageSize = res.data.data.size;
+                    })
+                }
+            },
+            handleSelectByName() {
+                _this = this;
+                _this.brand = "";
+                _this.type = "";
+                if (_this.name === "") {
+                    this.selectByPage();
+                } else {
+                    axios.get("/objects/" + _this.currentPage + "/" + _this.pageSize + "/name/" + _this.name).then((res) => {
+                        _this.tableData = res.data.data.records;
+                        _this.currentPage = res.data.data.current;
+                        _this.totalCount = res.data.data.total;
+                        _this.pageSize = res.data.data.size;
+                    })
+                }
+            },
+            handleSelectById(row) {
+                _this = this;
+                const userInfo = window.localStorage.getItem('userInfo');
+                if(userInfo){
+                    axios.get("/objects/" + row.id).then((res) => {
+                        if (res.data.data != null) {
+                            _this.formVisible4Rent = true;
+                            _this.formDate = res.data.data;
+                        } else {
+                            this.$message.error("数据展开失败,自动刷新!");
+                        }
+                    }).finally(() => {
+                        this.selectByPage();
+                    });
+                }else{
+                    this.$message.error("请登录!");
+                }
+            },
+            handleRent() {
+                _this = this;
+                if(typeof _this.num !== 'number'){
+                    this.$message.error("必须为数字!");
+                }else if (_this.num <= 0 || _this.num > _this.formDate.stock) {
+                    this.$message.error("租借失败,租借数目错误!");
+                } else {
+                    axios.put("/objects/" + this.num + "/" + this.days, this.formDate).then((res) => {
+                        if(res.data.code === 60000){
+                            this.$message.warning("用户余额不足!");
+                        } else if (res.data.data) {
+                            _this.formVisible4Rent = false;
+                            this.$message.success("租借成功!");
+                            _this.flushMoney();
+                        } else {
+                            this.$message.error("租借失败!");
+                        }
+                    }).finally(() => {
+                        this.selectByPage();
+                        _this.num = 1;
+                        _this.days = 1;
+                    });
+                }
+            },
+            handleDetailOpen(row) {
+                _this = this;
+                axios.get("/objects/" + row.id).then((res) => {
+                    if (res.data.data != null) {
+                        _this.formVisible4Detail = true;
+                        _this.formDate = res.data.data;
+                    } else {
+                        this.$message.error("数据展开失败,自动刷新!");
+                    }
+                }).finally(() => {
+                    this.selectByPage();
+                });
+            },
+            handleShowEdit(row) {
+                _this = this;
+                axios.get("/objects/" + row.id).then((res) => {
+                    if (res.data.data != null) {
+                        _this.formVisible4Edit = true;
+                        _this.formDate = res.data.data;
+                    } else {
+                        this.$message.error("数据展开失败,自动刷新!");
+                    }
+                }).finally(() => {
+                    this.selectByPage();
+                });
+            },
+            handleDetailClose() {
+                this.formVisible4Detail = false;
+            },
+            handleDelete(row) {
+                this.$confirm("此删除不可撤回,是否删除!", "提示", {type: "warning"}).then(() => {
+                    axios.delete("/objects/" + row.id).then((res) => {
+                        if (res.data.flag) {
+                            this.$message.success("删除成功");
+                        } else {
+                            this.$message.success("删除失败");
+                        }
+                    }).finally(() => {
+                        this.selectByPage();
+                    });
+                }).catch(() => {
+                    this.$message.success("取消删除");
+                });
+            },
+            selectByPage() {
+                _this = this;
+                axios.get("/objects/" + _this.currentPage + "/" + _this.pageSize).then((res) => {
+                    _this.tableData = res.data.data.records;
+                    _this.currentPage = res.data.data.current;
+                    _this.totalCount = res.data.data.total;
+                    _this.pageSize = res.data.data.size;
+                });
+            },
+            handleSizeChange(pageSize) {
+                this.pageSize = pageSize;
+                if(this.name !== ""){
+                    this.handleSelectByName();
+                } else if (this.brand !== "") {
+                    this.handleSelectByBrand();
+                } else if (this.type !== "") {
+                    this.handleSelectByType();
+                } else {
+                    this.selectByPage();
+                }
+            },
+            handleCurrentChange(currentPage) {
+                this.currentPage = currentPage;
+                if(this.name !== ""){
+                    this.handleSelectByName();
+                } else if(this.brand !== "") {
+                    this.handleSelectByBrand();
+                } else if (this.type !== "") {
+                    this.handleSelectByType();
+                } else {
+                    this.selectByPage();
+                }
+            }
+        }
+    })
+</script>
+<style>
+</style>
+</html>

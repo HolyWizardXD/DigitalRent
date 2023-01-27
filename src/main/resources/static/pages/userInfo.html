@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>用户信息</title>
+    <link rel="shortcut icon" href="../image/icon/sub_account.png">
+    <!-- 引入axios -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- 引入vue -->
+    <script src="../js/vue.js"></script>
+    <!-- 引入el组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div id="app">
+    <el-page-header @back="goBack" content="个人中心">
+    </el-page-header>
+    <div class="lineImg"><img src="../image/background/line.png" style="width: 100%"/></div>
+    <el-row>
+        <el-col :span="12" :push="6">
+            <el-tabs type="border-card" tab-position="left" v-model="activeName" class="tabs">
+                <el-tab-pane disabled="true" name="first">
+                    <span slot="label" class="tabFont">个人中心</span>
+                </el-tab-pane>
+                <el-tab-pane label="首页" name="second">
+                    <el-descriptions class="margin-top" title="个人信息" :column="3" border>
+                        <template slot="extra">
+                            <el-button type="primary" size="small" @click="toEditUser">操作</el-button>
+                        </template>
+                        <el-descriptions-item>
+                            <template slot="label">
+                                <i class="el-icon-user"></i>
+                                用户名
+                            </template>
+                            {{ userInfo.username }}
+                        </el-descriptions-item>
+                        <el-descriptions-item>
+                            <template slot="label">
+                                <i class="el-icon-mobile-phone"></i>
+                                手机号
+                            </template>
+                            {{ userInfo.phone }}
+                        </el-descriptions-item>
+                        <el-descriptions-item>
+                            <template slot="label">
+                                <i class="el-icon-coin"></i>
+                                余额
+                            </template>
+                            {{ userInfo.money }}
+                        </el-descriptions-item>
+                        <el-descriptions-item>
+                            <template slot="label">
+                                <i class="el-icon-office-building"></i>
+                                联系地址
+                            </template>
+                            {{ userInfo.address }}
+                        </el-descriptions-item>
+                    </el-descriptions>
+                    <el-divider></el-divider>
+                    <div class="block">
+                        <span class="demonstration">评价</span>
+                        <el-rate v-model="evaluate"
+                                 show-score
+                                 text-color="#ff9900"
+                                 class="rate"></el-rate>
+                        <el-input
+                                type="textarea"
+                                :rows="5"
+                                placeholder="请输入内容(最长100字)"
+                                class="text"
+                                maxlength="100"
+                                show-word-limit
+                                v-model="textarea">
+                        </el-input>
+                        <el-row>
+                            <el-col push="22">
+                                <el-button type="primary" style="margin-top: 8px" size="small" @click="updateRate">提交<i
+                                        class="el-icon-edit"></i></el-button>
+                            </el-col>
+                        </el-row>
+                    </div>
+                </el-tab-pane>
+                <el-tab-pane label="修改信息" name="third">
+                    <span class="demonstration">我的信息</span>
+                    <el-divider></el-divider>
+                    <el-row gutter="24">
+                        <el-col push="2" span="9">
+                            <el-input v-model="userInfoChange.username">
+                                <template slot="prepend">用户名</template>
+                            </el-input>
+                        </el-col>
+                        <el-col push="2" span="10" style="margin-top: 8px">
+                            <span class="spanFont">{{ point }}</span>
+                        </el-col>
+                    </el-row>
+                    <el-row style="margin-top: 20px">
+                        <el-col push="2" span="12">
+                            <el-input v-model="userInfoChange.password">
+                                <template slot="prepend">密码</template>
+                            </el-input>
+                        </el-col>
+                    </el-row>
+                    <el-row style="margin-top: 20px">
+                        <el-col push="2" span="12">
+                            <el-input v-model="userInfoChange.phone">
+                                <template slot="prepend">联系电话</template>
+                            </el-input>
+                        </el-col>
+                    </el-row>
+                    <el-row style="margin-top: 20px">
+                        <el-col push="2" span="16">
+                            <el-input v-model="userInfoChange.address">
+                                <template slot="prepend">地址</template>
+                            </el-input>
+                        </el-col>
+                    </el-row>
+                    <el-divider></el-divider>
+                    <el-row style="margin-top: 20px">
+                        <el-col push="10" span="16">
+                            <el-button type="primary" @click="save">保存</el-button>
+                        </el-col>
+                    </el-row>
+                </el-tab-pane>
+                <el-tab-pane label="租借物品" name="fourth">
+                    <template>
+                        <el-table
+                                :data="rentData"
+                                style="width: 100%">
+                            <el-table-column
+                                    label="名称"
+                                    prop="objects_name"
+                                    width="140px">
+                            </el-table-column>
+                            <el-table-column
+                                    label="数量"
+                                    prop="amount"
+                                    width="75px">
+                                <template slot-scope="scope">
+                                    {{ scope.row.amount }}件
+                                </template>
+                            </el-table-column>
+                            <el-table-column
+                                    label="价格"
+                                    prop="value"
+                                    width="75px">
+                                <template slot-scope="scope">
+                                    {{ scope.row.value }}元
+                                </template>
+                            </el-table-column>
+                            <el-table-column
+                                    label="租借日期"
+                                    prop="rent_time"
+                                    width="155px">
+                            </el-table-column>
+                            <el-table-column
+                                    label="截止日期"
+                                    prop="return_time"
+                                    width="155px">
+                            </el-table-column>
+                            <el-table-column
+                                    align="right">
+                                <template slot="header" slot-scope="scope">
+                                    <el-input v-model="objects_name" placeholder="请输入内容"
+                                              @keyup.enter.native="handleSelectByName"></el-input>
+                                </template>
+                                <template slot-scope="scope">
+                                    <el-button
+                                            size="mini"
+                                            type="success"
+                                            @click="reRent(scope.row)">续租
+                                    </el-button>
+                                    <el-button
+                                            size="mini"
+                                            type="primary"
+                                            @click="handleReturnById(scope.row)">归还
+                                    </el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </template>
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="currentPage"
+                            :page-sizes="[4, 7, 10, 13]"
+                            :page-size="pageSize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="totalCount">
+                    </el-pagination>
+                </el-tab-pane>
+                <el-tab-pane label="余额充值" name="fifth">
+                    <el-descriptions class="money" title="剩余额度" :column="2" border>
+                        <template slot="extra">
+                            <el-button type="primary" size="small" @click="rechargeDialogVisible = true">充值</el-button>
+                        </template>
+                        <el-descriptions-item>
+                            <template slot="label">
+                                <i class="el-icon-coin"></i>
+                                余额
+                            </template>
+                            {{ userInfo.money }}
+                        </el-descriptions-item>
+                    </el-descriptions>
+                    <el-divider></el-divider>
+                    <img src="../image/other/alipay.jpg" style="width: 100%">
+                </el-tab-pane>
+                <el-tab-pane label="新增物品" v-if="isAdd" name="sixth">
+                    <span class="demonstration">新增</span>
+                    <el-divider></el-divider>
+                    <el-row gutter="20">
+                        <el-col span="8" push="2">
+                            <el-input v-model="newObject.name">
+                                <template slot="prepend">名称</template>
+                            </el-input>
+                        </el-col>
+                        <el-col span="6" push="2">
+                            <el-input v-model="newObject.brand">
+                                <template slot="prepend">品牌</template>
+                            </el-input>
+                        </el-col>
+                        <el-col span="6" push="2">
+                            <el-input v-model="newObject.type">
+                                <template slot="prepend">类型</template>
+                            </el-input>
+                        </el-col>
+                    </el-row>
+                    <el-row gutter="20" style="margin-top: 20px">
+                        <el-col span="10" push="2">
+                            <el-input v-model="newObject.value">
+                                <template slot="prepend">价格</template>
+                                <template slot="append">元/天</template>
+                            </el-input>
+                        </el-col>
+                        <el-col span="10" push="2">
+                            <el-input v-model="newObject.stock">
+                                <template slot="prepend">库存</template>
+                                <template slot="append">件</template>
+                            </el-input>
+                        </el-col>
+                    </el-row>
+                    <el-row>
+                        <el-col span="20" push="2">
+                            <el-input
+                                    type="textarea"
+                                    :rows="5"
+                                    placeholder="请输入描述(最长100字)"
+                                    class="text"
+                                    maxlength="100"
+                                    show-word-limit
+                                    v-model="newObject.description">
+                            </el-input>
+                        </el-col>
+                    </el-row>
+                    <el-row style="margin-top: 20px">
+                        <el-col push="10" span="16">
+                            <el-button type="primary" @click="addObject">新增</el-button>
+                        </el-col>
+                    </el-row>
+                </el-tab-pane>
+            </el-tabs>
+        </el-col>
+    </el-row>
+    <el-dialog
+            title="充值"
+            :visible.sync="rechargeDialogVisible"
+            width="30%">
+        <el-input v-model.number="chargeMoney" placeholder="请输入充值的金额" style="width: 80%"></el-input>
+        <span slot="footer" class="dialog-footer">
+    <el-button @click="rechargeDialogVisible = false">取 消</el-button>
+    <el-button type="primary" @click="recharge">确 定</el-button>
+  </span>
+    </el-dialog>
+    <el-dialog
+            title="续租"
+            :visible.sync="RentDialogVisible"
+            width="30%">
+        <el-input v-model.number="rentDays" placeholder="请输入续租的天数" style="width: 70%">
+            <template slot="prepend">天数</template>
+            <template slot="append">续租价格{{ this.rentMoney * this.rentDays * this.rentAmount }}元</template>
+        </el-input>
+        <span slot="footer" class="dialog-footer">
+    <el-button @click="RentDialogVisible = false">取 消</el-button>
+    <el-button type="primary" @click="reRentSub">确 定</el-button>
+  </span>
+    </el-dialog>
+</div>
+</body>
+<script>
+    const app = new Vue({
+        el: "#app",
+        created() {
+            const userInfo = window.localStorage.getItem('userInfo');
+            if (userInfo) {
+                this.userInfo = JSON.parse(userInfo);
+                this.userInfoChange = this.userInfo;
+                if (this.userInfo.permission === 0) {
+                    this.isAdd = true;
+                }
+            }
+            this.flushRate();
+            this.selectRentByPage();
+            this.overTime();
+        },
+        data: {
+            currentPage: 1,
+            pageSize: 13,
+            totalCount: 0,
+            objects_name: '',
+            chargeMoney: '',
+            rechargeDialogVisible: false,
+            RentDialogVisible: false,
+            rentDays: '',
+            rentAmount: '',
+            rentMoney: 0,
+            activeName: 'second',
+            evaluate: '0',
+            textarea: '',
+            point: '用户名不可与其他人重复',
+            isSave: true,
+            isAdd: false,
+            rentData: [
+                {}
+            ],
+            newObject: {
+                name: '',
+                brand: '',
+                type: '',
+                value: '',
+                description: '',
+                stock: '',
+            },
+            reRentData: {
+                id: '',
+                value: '',
+                amount: '',
+                days: '',
+            },
+            userInfo: {
+                id: '',
+                username: '',
+                password: '',
+                phone: '',
+                address: '',
+                money: '0.0',
+                permission: 1,
+            },
+            userInfoChange: {
+                id: '',
+                username: '',
+                password: '',
+                phone: '',
+                address: '',
+                money: '0.0',
+            },
+        },
+        methods: {
+            addObject() {
+                _this = this;
+                if (this.userInfo.permission === 0) {
+                    if (this.newObject.name === '' || this.newObject.brand === '' || this.newObject.type === '' || this.newObject.value === '' || this.newObject.stock === '') {
+                        this.$message.warning("除描述外其它不得为空!");
+                    } else {
+                        param = `?name=${this.newObject.name}&brand=${this.newObject.brand}&type=${this.newObject.type}&value=${this.newObject.value}&stock=${this.newObject.stock}&description=${this.newObject.description}`;
+                        axios.post("/objects" + param).then((res) => {
+                            if (res.data.code === 20011) {
+                                this.$message.success("添加成功!");
+                                _this.selectRentByPage();
+                            } else if (res.data.code === 20010) {
+                                this.$message.error("添加失败!");
+                            }
+                        })
+                    }
+                } else {
+                    this.$message.error("您没有权限执行此功能!");
+                }
+            },
+            StatusNotify(num) {
+                this.$notify({
+                    title: '警告',
+                    message: "有" + num + "件物品超过租借日期!",
+                    type: 'warning'
+                });
+            },
+            overTime() {
+                _this = this;
+                axios.get("/rents").then((res) => {
+                    const num = res.data.data;
+                    if (num > 0) {
+                        _this.StatusNotify(num);
+                    }
+                })
+            },
+            reRent(row) {
+                _this = this;
+                this.RentDialogVisible = true;
+                axios.get("/rents/" + row.id).then((res) => {
+                    _this.reRentData = res.data.data;
+                    _this.rentAmount = _this.reRentData.amount;
+                    _this.rentMoney = _this.reRentData.value / _this.reRentData.days;
+                })
+                this.flushUser();
+            },
+            reRentSub() {
+                _this = this;
+                if (this.rentDays === '') {
+                    this.$message.error("请输入续租天数");
+                } else {
+                    const value = this.rentMoney * this.rentDays * this.rentAmount;
+                    axios.put("/rents/" + _this.reRentData.id + "/" + _this.rentDays + "/" + _this.userInfo.id + "/" + value).then((res) => {
+                        if (res.data.code === 20030) {
+                            this.$message.error("用户余额不足!");
+                        } else if (res.data.code === 20031) {
+                            this.$message.success("续租成功!");
+                            _this.RentDialogVisible = false;
+                            _this.rentDays = '';
+                            _this.handleCurrentChange(_this.currentPage);
+                        }
+                    });
+                }
+            },
+            handleReturnById(row) {
+                _this = this;
+                this.$confirm('是否要归还此物品?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    axios.put("/rents/" + row.id + "/" + row.objects_id + "/" + row.amount).then((res) => {
+                    })
+                    this.$message({
+                        type: 'success',
+                        message: '归还成功!'
+                    });
+                    _this.currentPage = 1;
+                    this.selectRentByPage();
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消归还'
+                    });
+                });
+            },
+            handleSelectByName() {
+                _this = this;
+                const user_id = this.userInfo.id;
+                axios.get("/rents/" + _this.currentPage + "/" + _this.pageSize + "/" + user_id + "/" + _this.objects_name).then((res) => {
+                    _this.rentData = res.data.data.records;
+                    _this.currentPage = res.data.data.current;
+                    _this.totalCount = res.data.data.total;
+                    _this.pageSize = res.data.data.size;
+                });
+            },
+            handleSizeChange(pageSize) {
+                this.pageSize = pageSize;
+                if (this.objects_name !== '') {
+                    this.handleSelectByName();
+                } else {
+                    this.selectRentByPage();
+                }
+            },
+            handleCurrentChange(currentPage) {
+                this.currentPage = currentPage;
+                if (this.objects_name !== '') {
+                    this.handleSelectByName();
+                } else {
+                    this.selectRentByPage();
+                }
+            },
+            selectRentByPage() {
+                _this = this;
+                const user_id = this.userInfo.id;
+                axios.get("/rents/" + _this.currentPage + "/" + _this.pageSize + "/" + user_id).then((res) => {
+                    _this.rentData = res.data.data.records;
+                    _this.currentPage = res.data.data.current;
+                    _this.totalCount = res.data.data.total;
+                    _this.pageSize = res.data.data.size;
+                    _this.objects_name = '';
+                });
+            },
+            containName() {
+                _this = this;
+                if (this.userInfoChange.username === this.userInfo.username) {
+                    this.isSave = true;
+                } else {
+                    axios.get("/users/userContain/" + _this.userInfoChange.username).then((res) => {
+                        if (res.data.data) {
+                            _this.isSave = false;
+                            _this.point = '该用户名已经存在!';
+                        } else {
+                            _this.isSave = true;
+                            _this.point = '用户名可以使用';
+                        }
+                    })
+                }
+            },
+            save() {
+                if (this.userInfoChange.username === ''||this.userInfoChange.password === '') {
+                    this.$message.warning("用户名和密码不可为空!");
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    this.$confirm('是否要修改本人的用户信息!', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        param = `?user_id=${this.userInfoChange.id}&password=${this.userInfoChange.password}&username=${this.userInfoChange.username}&phone=${this.userInfoChange.phone}&address=${this.userInfoChange.address}`;
+                        axios.put("/users/editUser" + param).then((res) => {
+                            if (res.data.code === 20030) {
+                                this.$message({
+                                    type: 'error',
+                                    message: '修改失败,用户名已存在!'
+                                });
+                            } else {
+                                this.flushUser();
+                                this.$message({
+                                    type: 'success',
+                                    message: '修改成功!'
+                                });
+                                setTimeout(function () {
+                                    window.location.reload();
+                                }, 1000);
+                            }
+                        })
+                    }).catch(() => {
+                        this.$message({
+                            type: 'info',
+                            message: '已取消修改'
+                        });
+                    });
+                }
+            },
+            goBack() {
+                setTimeout(function () {
+                    window.location.href = '../index.html';
+                }, 300);
+            },
+            toEditUser() {
+                _this = this;
+                setTimeout(function () {
+                    _this.activeName = "third";
+                }, 200);
+            },
+            flushRate() {
+                _this = this;
+                const user_id = this.userInfo.id;
+                axios.get("/rates/" + user_id).then((res) => {
+                    _this.evaluate = res.data.data.evaluate;
+                    _this.textarea = res.data.data.text;
+                })
+            },
+            updateRate() {
+                _this = this;
+                param = `?user_id=${this.userInfo.id}&name=${this.userInfo.username}&evaluate=${this.evaluate}&text=${this.textarea}`;
+                axios.post("/rates/rate" + param).then((res) => {
+                    _this.flushRate();
+                    this.$message.success("评价已上传!");
+                })
+            },
+            recharge() {
+                _this = this;
+                if (typeof this.chargeMoney !== 'number') {
+                    this.$message.error("必须为数字!");
+                } else if (this.chargeMoney <= 0) {
+                    this.$message.error("充值金额不能小于或等于0元!");
+                } else if (this.chargeMoney > 10000) {
+                    this.$message.error("充值金额不能大于10000元!");
+                } else {
+                    param = `?user_id=${this.userInfo.id}&chargeMoney=${this.chargeMoney}`;
+                    axios.put("/users/recharge" + param).then((res => {
+                        if (res.data.code === 20031) {
+                            this.$message.success("充值成功!");
+                            _this.rechargeDialogVisible = false;
+                            _this.chargeMoney = '';
+                            _this.flushUser();
+                        }
+                    }))
+                }
+            },
+            flushUser() {
+                _this = this;
+                axios.get("/users/flush/" + _this.userInfo.id).then((res) => {
+                    window.localStorage.setItem("userInfo", JSON.stringify(res.data.data));
+                    const userInfo = window.localStorage.getItem('userInfo');
+                    _this.userInfo = JSON.parse(userInfo);
+                })
+            },
+        },
+    })
+</script>
+<style lang="scss">
+  .tabs {
+    height: 830px;
+  }
+
+  .tabFont {
+    font-size: 16px;
+  }
+
+  .lineImg {
+    margin-top: 8px;
+    padding: 0;
+  }
+
+  .rate {
+    margin-top: 8px;
+  }
+
+  .text {
+    margin-top: 8px;
+  }
+
+  .demonstration {
+    font-size: 16px;
+    font-weight: 550;
+  }
+
+  .spanFont {
+    font-size: 16px;
+    font-weight: 100;
+  }
+
+  .description {
+    color: grey;
+  }
+
+</style>
+</html>

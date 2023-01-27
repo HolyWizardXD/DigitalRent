@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>评价</title>
+    <link rel="shortcut icon" href="../image/icon/rate.png">
+    <!-- 引入axios -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- 引入vue -->
+    <script src="../js/vue.js"></script>
+    <!-- 引入el组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div id="app">
+    <el-page-header @back="goBack" content="评价">
+    </el-page-header>
+    <div class="lineImg"><img src="../image/background/line.png" style="width: 100%"/></div>
+    <div>
+        <el-row>
+            <el-col span="12" push="6">
+                <el-row style="margin-top: 8px">
+                    <el-col span="4" push="7" style="margin-top: 8px; font-size: 18px; color: darkslategray">
+                        选择排序方式:
+                    </el-col>
+                    <el-col span="6" push="6">
+                        <template>
+                            <el-select v-model="value" placeholder="请选择" @change="getRate">
+                                <el-option
+                                        v-for="item in options"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+                                </el-option>
+                            </el-select>
+                        </template>
+                    </el-col>
+                </el-row>
+                <el-divider></el-divider>
+                <div v-for="rate in rateDate">
+                    <el-row style="margin-top: 5px">
+                        <el-col span="3" class="tableName">
+                            {{ rate.name }}
+                        </el-col>
+                        <el-col span="21">
+                            <el-rate v-model="rate.evaluate"
+                                     show-score
+                                     text-color="#ff9900"
+                                     disabled
+                                     class="tableRate"></el-rate>
+                        </el-col>
+                        <el-col span="24" class="tableText">
+                            {{ rate.text }}
+                        </el-col>
+                        <el-col span="16" push="20" class="tableTime">
+                            {{ rate.time }}
+                        </el-col>
+                    </el-row>
+                    <el-divider></el-divider>
+                </div>
+                <el-pagination
+                        @size-change="handleSizeChange"
+                        @current-change="handleCurrentChange"
+                        :current-page="currentPage"
+                        :page-sizes="[5, 10, 15, 20]"
+                        :page-size="pageSize"
+                        layout="total, sizes, prev, pager, next, jumper"
+                        :total="totalCount">
+                </el-pagination>
+            </el-col>
+        </el-row>
+    </div>
+</div>
+</body>
+<script>
+    const app = new Vue({
+        el: "#app",
+        created() {
+            this.getRate();
+        },
+        data: {
+            rateDate: [
+                {
+                    name: 'HolyWizard',
+                    evaluate: '5',
+                    text: '很好的一个网站',
+                    time: '2022-11-16 21:53:04'
+                }
+            ],
+            options: [{
+                value: 'id',
+                label: '默认排序'
+            }, {
+                value: 'time',
+                label: '最新评价'
+            }, {
+                value: 'evaluate',
+                label: '评分从高到低'
+            }],
+            value: 'id',
+            currentPage: 1,
+            totalCount: 0,
+            pageSize: 5,
+        },
+        methods: {
+            goBack() {
+                setTimeout(function () {
+                    window.location.href = '../index.html';
+                }, 300);
+            },
+            getRate() {
+                _this = this;
+                axios.get("/rates/" + _this.value + "/" + _this.currentPage + "/" + _this.pageSize).then((res) => {
+                    _this.rateDate = res.data.data.records;
+                    _this.currentPage = res.data.data.current;
+                    _this.totalCount = res.data.data.total;
+                    _this.pageSize = res.data.data.size;
+                });
+            },
+            handleSizeChange(pageSize) {
+                this.pageSize = pageSize;
+                this.getRate();
+            },
+            handleCurrentChange(currentPage) {
+                this.currentPage = currentPage;
+                this.getRate();
+            },
+        },
+    })
+</script>
+<style lang="scss">
+  .tableName {
+    font-size: 16px;
+    color: blue;
+  }
+
+  .tableText {
+    font-size: 16px;
+    margin-top: 5px;
+    color: darkslategray;
+  }
+
+  .tableRate {
+    margin-right: 5px;
+  }
+
+  .tableTime {
+    margin-top: 5px;
+    color: darkcyan;
+  }
+
+  .lineImg {
+    margin-top: 8px;
+    padding: 0;
+  }
+</style>
+</html>

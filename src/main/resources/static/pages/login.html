@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+    <link rel="shortcut icon" href="../image/icon/sub_account.png">
+    <!-- 引入axios -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- 引入vue -->
+    <script src="../js/vue.js"></script>
+    <!-- 引入el组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div id="app">
+    <div class="loginContainer">
+        <h1 class="loginFont">登录</h1>
+        <el-form :label-position="labelPosition" label-width="auto">
+            <br>
+            <el-row>
+                <el-col :span="18" :push="2">
+                    <el-form-item label="用户名" class="item">
+                        <el-input v-model="username"></el-input>
+                    </el-form-item>
+                    <br>
+                </el-col>
+                <el-col :span="18" :push="2">
+                    <el-form-item label="密码" class="item">
+                        <el-input v-model="password" show-password></el-input>
+                    </el-form-item>
+                    <br>
+                </el-col>
+                <el-col :push="15">
+                    <el-button type="primary" class="loginBt" @click="login">登录</el-button>
+                </el-col>
+            </el-row>
+        </el-form>
+        <br><br>
+        <a href="register.html" class="register">还没有账号?点此注册</a>
+    </div>
+</div>
+</body>
+<script>
+    const app = new Vue({
+        el: "#app",
+        created() {
+            const userInfo = window.localStorage.getItem('userInfo');
+            if(userInfo){
+                this.userInfo = JSON.parse(userInfo);
+                this.isLog = true;
+            }
+        },
+        data: {
+            labelPosition: 'right',
+            username: '',
+            password: '',
+            userInfo: {},
+            isLog: false,
+        },
+        methods: {
+            login() {
+                _this = this;
+                if(this.isLog){
+                    this.$message.warning("您已经登录!");
+                    setTimeout(function (){window.location.href = '../index.html';},1000);
+                }else if (this.username === '' || this.password === '') {
+                    this.$message.warning("用户名或密码不能为空!");
+                } else {
+                    param = `?username=${this.username}&password=${this.password}`;
+                    axios.get("/users/login" + param).then((res) => {
+                        if (res.data.code === 50000) {
+                            this.$message.error("登陆失败,用户不存在!");
+                        } else if (res.data.code === 50002) {
+                            this.$message.warning("登陆失败,密码错误!");
+                        } else if (res.data.code === 50001) {
+                            this.$message.success("登陆成功!");
+                            localStorage.setItem('userInfo',JSON.stringify(res.data.data));
+                            setTimeout(function (){window.location.href = '../index.html';},1000);
+                        }
+                    })
+                }
+            },
+        },
+    })
+</script>
+<style lang="scss">
+    body {
+        margin: 0;
+        padding: 0;
+        background-image: url("../image/background/loginBackground.jpg");
+    }
+
+    .loginContainer {
+        width: 480px;
+        height: 400px;
+        border-radius: 30px;
+        border: 1px rgba(100, 100, 255) solid;
+        background-color: rgba(255, 255, 255, 0.18);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(+37%, -75%);
+    }
+
+    .loginFont {
+        text-align: center;
+        font-size: 36px;
+        margin-top: 20px;
+        font-weight: normal;
+        color: white;
+    }
+
+    .el-textarea__inner, .el-input__inner {
+        background: transparent !important;
+        border-radius: 5px;
+        color: black;
+    }
+
+    .item .el-form-item__label {
+        color: white;
+    }
+
+    .loginBt {
+        width: 100px;
+        background: transparent !important;
+
+    }
+
+    .register {
+        margin-left: 34%;
+        text-decoration: none;
+        color: #1f5af1;
+    }
+</style>
+</html>

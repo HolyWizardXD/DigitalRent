@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>注册</title>
+    <link rel="shortcut icon" href="../image/icon/sub_account.png">
+    <!-- 引入axios -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- 引入vue -->
+    <script src="../js/vue.js"></script>
+    <!-- 引入el组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div id="app">
+    <div class="registerContainer">
+        <h1 class="registerFont">注册账户</h1>
+        <el-form :label-position="labelPosition" label-width="auto">
+            <el-row>
+                <el-col :span="18" :push="2">
+                    <el-form-item label="用户名" class="item">
+                        <el-input v-model="username"></el-input>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="18" :push="2">
+                    <el-form-item label="密码" class="item">
+                        <el-input v-model="password"></el-input>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="18" :push="2">
+                    <el-form-item label="确认密码" class="item">
+                        <el-input v-model="confirmPassword"></el-input>
+                    </el-form-item>
+                </el-col>
+                <el-col :push="10">
+                    <el-button class="registerBt" @click="register">注册</el-button>
+                </el-col>
+            </el-row>
+        </el-form>
+    </div>
+    <a href="../index.html" class="back">回到主页</a>
+</div>
+</body>
+<script>
+    const app = new Vue({
+        el: "#app",
+        created() {
+        },
+        data: {
+            labelPosition: 'right',
+            username: '',
+            password: '',
+            confirmPassword: '',
+        },
+        methods: {
+            register() {
+                _this = this;
+                if (this.username === '' || this.password === '' || this.confirmPassword === '') {
+                    this.$message.error("用户名和密码不能为空!");
+                } else if (this.password !== this.confirmPassword) {
+                    this.$message.error("两次填写的密码不一致!");
+                    this.password = '';
+                    this.confirmPassword = '';
+                } else {
+                    param = `?username=${this.username}&password=${this.password}`;
+                    axios.post("/users/register" + param).then((res) => {
+                        if (res.data.code === 70002) {
+                            this.$message.error("注册失败,用户已存在!");
+                        } else if (res.data.code === 70000) {
+                            this.$message.error("注册失败!");
+                        } else if (res.data.code === 70001) {
+                            this.$message.success("注册成功!");
+                            setTimeout(function () {
+                                window.location.href = 'login.html';
+                            }, 1000);
+                        }
+                    })
+                }
+            },
+        },
+    })
+</script>
+<style lang="scss">
+  body {
+    margin: 0;
+    padding: 0;
+    background-image: url("../image/background/registerBackGround.jpg");
+  }
+
+  .registerContainer {
+    width: 480px;
+    height: 380px;
+    border-radius: 30px;
+    background-color: rgba(255, 255, 255, 0.10);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(+50%, -80%);
+  }
+
+  .registerFont {
+    text-align: center;
+    font-size: 36px;
+    margin-top: 20px;
+    font-weight: normal;
+    color: #EBEEF5;
+  }
+
+  .el-textarea__inner, .el-input__inner {
+    background: transparent !important;
+    border-radius: 5px;
+    color: black;
+  }
+
+  .item .el-form-item__label {
+    color: #DCDFE6;
+  }
+
+  .registerBt {
+    width: 80px;
+    background: transparent !important;
+    color: #DCDFE6;
+  }
+
+  .back {
+    margin-left: 46%;
+    margin-top: 49%;
+    text-decoration: none;
+    position: absolute;
+    color: #eab077;
+    font-size: 20px;
+  }
+</style>
+</html>
